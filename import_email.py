@@ -36,7 +36,7 @@ warnings.filterwarnings("ignore")
 
 ''' 1. logging into email
 
-Resources utilized in this section:
+Thanks:
 https://flowingdata.com/2014/05/07/downloading-your-email-metadata/
 Chloe for pointing out on Slack that I needed port 993 and SSL set to True.
 '''
@@ -61,7 +61,7 @@ conn = imaplib.IMAP4_SSL(HOSTNAME)
 
 ''' 2. retrieving all email
 
-Resources utilized in this section:
+Thanks:
 https://flowingdata.com/2014/05/07/downloading-your-email-metadata/
 http://www.secnetix.de/olli/Python/list_comprehensions.hawk
 Emma for suggesting using a try-catch
@@ -119,8 +119,7 @@ def get_email(raw_data):
 
 get_email(data)
 
-''' 3. make the important information easily accessible
-'''
+''' 3. make the important information easily accessible '''
 
 # add_messages_to_dict_by_id : dict -> dict
 # input : messages - all_email (my janky list of dicts), basically
@@ -172,7 +171,7 @@ replyto_dict = make_dict_by_inreplyto(all_email, id_dict)
 
 ''' 4. writing functions to get the features
 
-Resources utilized in this section:
+Thanks:
 Jessica for explaining to me that the labels are not email addresses, but
 instead we should make all our features after getting an email and knowing who
 we're talking to.
@@ -303,11 +302,7 @@ def make_data_point(new_email, response_times):
     num_emails_received_in_prev_hr(new_email['message-id'], all_email)
     return [this_person_median_response_time, prev_hr_sent, prev_hr_received, seconds_since_midnight]
 
-''' 5. writing the response
-
-Resources utilized in this section:
-n/a
-'''
+''' 5. writing the response '''
 
 # email_to_respond_to : dict -> str
 # input : the email we need to respond to, as a dict
@@ -358,7 +353,7 @@ def write_message(email_to_respond_to):
 
 ''' 6. sending the response
 
-Resources utilized in this section:
+Thanks:
 http://www.gossamer-threads.com/lists/python/python/475867
 http://mailbot.readthedocs.io/en/latest/#
 http://stackoverflow.com/questions/10147455/how-to-send-an-email-with-gmail-as-provider-using-python
