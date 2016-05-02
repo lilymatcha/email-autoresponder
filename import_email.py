@@ -22,13 +22,14 @@ notes:
       - though it would probably still be worth it
 - learned a lot! =D
 '''
-
-import imaplib, email, getpass, datetime, pytz, smtplib, math, numpy
+#!/usr/bin/env python
+import imaplib, email, getpass, datetime, pytz, smtplib, math, numpy, time
 from mailbot import MailBot, register, Callback
 from email.utils import getaddresses
 from dateutil import parser, relativedelta
 from sklearn.linear_model import LinearRegression
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # this needed to be done
 import warnings
@@ -102,7 +103,7 @@ def get_email(raw_data):
 
         try:
              # add the stuff to the dictionary
-            msg_data['message-id'] = msg.get_all('message-id', None)[0]
+            msg_data['message-id'] = msg.get_all('message-id', [])[0]
             msg_data['from'] = [x.lower() for x in msg.get_all('from', [])]
             msg_data['to'] = [x.lower() for x in msg.get_all('delivered-to', [])]
             msg_data['in-reply-to'] = msg.get_all('in-reply-to', [])
@@ -114,8 +115,8 @@ def get_email(raw_data):
                 
             all_email.append(msg_data)
             
-        except ValueError:
-            print(msg.get_all('date', None)[0])
+        except (ValueError, IndexError, TypeError):
+            print ":/"
 
 get_email(data)
 
@@ -311,8 +312,9 @@ def write_message(email_to_respond_to):
 
     tR = "Hi friend!\n"
 
-    tR = tR + "This is an automatically generated email written to let you know when to expect a reply from Lily.\n\n"
-    tR = tR + "Here are some statistics on Lily's previous email interactions with you:\n\n"
+    tR = tR + "This is an automatically generated email written to let you know when to expect a reply from Lily."
+    tR = tR + " It is for a class assignment and should not be taken too seriously. :) \n\n"
+    tR = tR + " Here are some statistics on Lily's previous email interactions with you:\n\n"
 
     person_response_times = find_response_times(email_to_respond_to['from'][0], all_email)
 
@@ -343,7 +345,7 @@ def write_message(email_to_respond_to):
     reply_time_in_hrs = math.ceil(email_prediction / SECONDS_IN_AN_HR)
 
     tR = tR + "Based on the information listed and a few more data points (for example, the "
-    tR = tR + "time of day), I predict that you will receive a reply in " + str(int(reply_time_in_hrs))
+    tR = tR + "time of day), I predict that you will receive a reply within " + str(int(reply_time_in_hrs))
     tR = tR + " hours.\n\n"
 
     tR = tR + "This email was written by a Python script, so if you see any"\
@@ -403,6 +405,32 @@ class MyCallback(Callback):
             s.login(USERNAME, PASSWORD)
             s.sendmail(me, sender, msg_body)
             s.close()
+
+        ''' 7. save a draft
+
+        Thanks:
+        http://stackoverflow.com/questions/7519135/creating-a-draft-message-in-gmail-using-the-imaplib-in-python
+        http://stackoverflow.com/questions/771907/python-how-to-store-a-draft-email-with-bcc-recipients-to-exchange-server-via-im
+        http://stackoverflow.com/questions/17874360/python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not
+        '''
+
+        for payload in self.message.get_payload():
+            # if payload.is_multipart(): ...
+            if 'please' in str(payload) or 'Please' in str(payload) or 'can' \
+                    in str(payload) or 'Can' in str(payload):
+
+                message = MIMEMultipart()
+                message['Subject'] = self.message['subject'] 
+                message['From'] = me
+                message['to'] = sender 
+                message.attach(MIMEText('On it! :)\n')) 
+
+                conn.append("[Gmail]/Drafts" 
+                              ,'' 
+                              ,imaplib.Time2Internaldate(time.time()) 
+                              ,str(message)) 
+
+            print payload.get_payload()        
 
 # register the callback
 register(MyCallback)
