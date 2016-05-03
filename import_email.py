@@ -74,7 +74,9 @@ result, data = conn.uid('fetch', ','.join(uids), '(BODY[HEADER.FIELDS (MESSAGE-I
 # a list that will hold dictionaries holding message data
 all_email = []
 
-# WRITE THE DOCS FOR THIS LATER
+# get_email : str (?)
+# input : raw_data - everything about all my emails ever
+# output : n/a (but updates global var all_email)
 def get_email(raw_data):
     
     # Parse data and spit out info
@@ -269,7 +271,7 @@ def make_feature_list(sender, response_times, messages):
 
 # make_data_point : dict -> listof(float)
 # input : new_email - dict holding info about the new email i just received
-# output : go through the 
+# output : data points for that email
 def make_data_point(new_email, response_times):    
     seconds_since_midnight = (new_email['date'] - new_email['date'].replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
     this_person_median_response_time = median_time_for_person(response_times)
