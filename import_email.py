@@ -107,7 +107,7 @@ def get_email(raw_data):
             msg_data['from'] = [x.lower() for x in msg.get_all('from', [])]
             msg_data['to'] = [x.lower() for x in msg.get_all('delivered-to', [])]
             msg_data['in-reply-to'] = msg.get_all('in-reply-to', [])
-            msg_data['date'] = parser.parse(msg.get_all('date', None)[0])
+            msg_data['date'] = parser.parse(msg.get_all('date', None)[0]).replace(tzinfo=pytz.timezone('UTC'))
             if msg.get_all('subject', []) != []:
                 msg_data['subject'] = msg.get_all('subject', [])[0]
             else:
@@ -244,43 +244,23 @@ all_times_for_everyone = make_all_times_for_everyone(all_email)
 median_response_times = numpy.median(all_times_for_everyone)
 mean_response_times = numpy.mean(all_times_for_everyone)
 
-# num_emails_sent_in_prev_hr : str -> listof(int)
+# num_emails_in_prev_hr : str -> listof(int)
 # input : email_id - an email i have received
-# output : the number of emails I sent in the hour prior to receiving that email
-def num_emails_sent_in_prev_hr(email_id, messages):
+# output : the number of emails I sent or recieved in the hour prior to receiving that email
+def num_emails_in_prev_hr(email_id, messages):
     emails_this_hr = 1
-    for i in range(0, len(messages) - 1):
-        if messages[i]['message-id'] == email_id:
-            k = i
-            while ((messages[i]['date'].replace(tzinfo=pytz.timezone('UTC')) -\
-                   messages[k]['date'].replace(tzinfo=pytz.timezone('UTC'))).total_seconds()\
-                
-                   <= SECONDS_IN_AN_HR) and k >= 0:
+    index = 0
+    for index in range(len(messages) - 1):
+        if messages[index]['message-id'] == email_id:
+            break
 
-                if (messages[k]['from'][0] == ME or messages[k]['from'][0] == ALSO_ME or\
-                 messages[k]['from'][0] == THIS_TOO_IS_ME):
-                    emails_this_hr+=1
-                k-=1
+    k = index - 1
+    for k in range(index):
+        if ((messages[index]['date'] - messages[k]['date']).total_seconds() <= SECONDS_IN_AN_HR) and k > -1:
+            emails_this_hr+=1
+        k-=1
+
     return emails_this_hr
-
-prev_hr_sent = num_emails_sent_in_prev_hr(all_email[len(all_email) - 1]['message-id'], all_email)
-
-# num_emails_received_in_prev_hr : str -> listof(int)
-# input : email_id - an email i have received
-# output : the number of emails I sent in the hour prior to receiving that email
-def num_emails_received_in_prev_hr(email_id, messages):
-    emails_this_hr = 1
-    for i in range(0, len(messages) - 1):
-        if messages[i]['message-id'] == email_id:
-            k = i
-            while ((messages[i]['date'].replace(tzinfo=pytz.timezone('UTC')) -\
-                   messages[k]['date'].replace(tzinfo=pytz.timezone('UTC'))).total_seconds()\
-                   <= SECONDS_IN_AN_HR) and k >= 0:
-                emails_this_hr+=1
-                k-=1
-    return emails_this_hr - prev_hr_sent
-
-prev_hr_received = num_emails_received_in_prev_hr(all_email[len(all_email) - 1]['message-id'], all_email)
 
 # make_feature_list : str listof(float) listof(dict) -> listof(listof(number))
 # input : sender - str with email
@@ -300,8 +280,8 @@ def make_feature_list(sender, response_times, messages):
 def make_data_point(new_email, response_times):    
     seconds_since_midnight = (new_email['date'] - new_email['date'].replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
     this_person_median_response_time = median_time_for_person(response_times)
-    num_emails_received_in_prev_hr(new_email['message-id'], all_email)
-    return [this_person_median_response_time, prev_hr_sent, prev_hr_received, seconds_since_midnight]
+    prev_hr_emails = num_emails_in_prev_hr(new_email['message-id'], all_email)
+    return [this_person_median_response_time, prev_hr_emails, seconds_since_midnight]
 
 ''' 5. writing the response '''
 
@@ -328,10 +308,11 @@ def write_message(email_to_respond_to):
     tR = tR + "Median response time for everyone (in hrs): " + str(median_response_times / SECONDS_IN_AN_HR) + "\n\n"
 
     tR = tR + "(The following two metrics are a little buggy still, so don't count too much on them!)\n"
-    tR = tR + "Number of emails Lily has sent in the previous hour: "
-    tR = tR + str(prev_hr_sent) + "\n"
-    tR = tR + "Number of emails Lily has received in the previous hour: "
-    tR = tR + str(prev_hr_received) + "\n\n"
+
+    prev_hr_emails = num_emails_in_prev_hr(email_to_respond_to['message-id'], all_email)
+
+    tR = tR + "Number of emails Lily has sent or received in the previous hour: "
+    tR = tR + str(prev_hr_emails) + "\n\n"
 
     # draft the email
     features = make_feature_list(email_to_respond_to['from'][0], person_response_times, all_email)
@@ -377,7 +358,7 @@ class MyCallback(Callback):
             new_email['date'] = parser.parse(self.message['date'])
             
             if 'subject' in self.message:
-                new_email['subject'] = self.message['subject'].lower()
+                new_email['subject'] = self.message['subject']
             else:
                 new_email['subject'] = '(no subject)'
             
@@ -416,8 +397,8 @@ class MyCallback(Callback):
 
         for payload in self.message.get_payload():
             # if payload.is_multipart(): ...
-            if 'please' in str(payload) or 'Please' in str(payload) or 'can' \
-                    in str(payload) or 'Can' in str(payload):
+            if ' please ' in str(payload) or 'Please ' in str(payload) or ' can ' \
+                    in str(payload) or 'Can ' in str(payload):
 
                 message = MIMEMultipart()
                 message['Subject'] = self.message['subject'] 
