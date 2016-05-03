@@ -1,25 +1,18 @@
 ''' 0. intro
 
 notes:
-- this is run via cron every minute
-- this is hosted on a digitalocean server 
+- this is hosted on a digitalocean server and run via cron every minute
 - warnings are suppressed because apparently i was using something
   deprecated, and fixing that was not a priority
-- the number of emails in the past hour (both sent and received)
-  functions only work sometimes
-  - i have no idea why, though i suspect it might have something to
-    do with my hard coding in ME, ALSO_ME, and THIS_TOO_IS_ME...
-  - but received worked before??? this is also quite sad, because emails
-    received is my feature with the highest coefficient
-  - sent never worked
 - this code is super time inefficient. there's more than one function
   that works basically by going through each email and asking, "is this
   [some quality that only applied to a small percentage of emails]?"
   - i could fix this by preprocessing a lot more, but
-    - getting this working was a higher priority
+    - getting it working at all was a higher priority
     - that would be space inefficient (bc i'd probably use hella
       hashtables)
-      - though it would probably still be worth it
+      - though it would probably still be worth it, esp cause my space
+        isn't limited
 - learned a lot! =D
 '''
 #!/usr/bin/env python
