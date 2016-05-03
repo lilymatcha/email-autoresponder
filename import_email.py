@@ -319,6 +319,10 @@ def write_message(email_to_respond_to):
 
     email_prediction = lin_reg.predict(make_data_point(email_to_respond_to, person_response_times))
     reply_time_in_hrs = math.ceil(email_prediction / SECONDS_IN_AN_HR)
+    
+    # why do bad things happen to good people
+    if reply_time_in_hrs < 0:
+        reply_time_in_hrs = 24
 
     tR = tR + "Based on the information listed and a few more data points (for example, the "
     tR = tR + "time of day), I predict that you will receive a reply within " + str(int(reply_time_in_hrs))
