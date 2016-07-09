@@ -37,17 +37,14 @@ Chloe for pointing out on Slack that I needed port 993 and SSL set to True.
 
 PORT = 993  # port number, usually 143 or 993 if ssl is enabled
 SSL = True
-ME = '"george, lily" <lily_george@brown.edu>'
-ALSO_ME = 'lily_george@brown.edu'
-THIS_TOO_IS_ME = '"lily george" <lily_george@brown.edu>'
 SECONDS_IN_AN_HR = 3600
 
 # Email settings
-HOSTNAME = 'imap.gmail.com'
+HOSTNAME = 'imap.gmail.com' # these will be diff if you aren't using gmail
 SMTP_HOSTNAME = 'smtp.gmail.com'
-USERNAME = 'lily_george@brown.edu'
-PASSWORD = getpass.getpass()
-MAILBOX = '[Gmail]/All Mail'
+USERNAME = 'youremail@host.example'
+PASSWORD = 'yourpass' # don't put this public anywhere!!! you can also use getpass.getpass()
+MAILBOX = '[Gmail]/All Mail' # or whatever category you want to affect
 
 # Connection
 conn = imaplib.IMAP4_SSL(HOSTNAME)
@@ -287,9 +284,8 @@ def write_message(email_to_respond_to):
 
     tR = "Hi friend!\n"
 
-    tR = tR + "This is an automatically generated email written to let you know when to expect a reply from Lily."
-    tR = tR + " It is for a class assignment and should not be taken too seriously. :) \n\n"
-    tR = tR + " Here are some statistics on Lily's previous email interactions with you:\n\n"
+    tR = tR + "This is an automatically generated email written to let you know when to expect a reply from [user]."
+    tR = tR + "Here are some statistics on [user]'s previous email interactions with you:\n\n"
 
     person_response_times = find_response_times(email_to_respond_to['from'][0], all_email)
 
@@ -301,8 +297,6 @@ def write_message(email_to_respond_to):
 
     tR = tR + "Mean response time for everyone (in hrs): " + str(mean_response_times / SECONDS_IN_AN_HR) + "\n"
     tR = tR + "Median response time for everyone (in hrs): " + str(median_response_times / SECONDS_IN_AN_HR) + "\n\n"
-
-    tR = tR + "(The following two metrics are a little buggy still, so don't count too much on them!)\n"
 
     prev_hr_emails = num_emails_in_prev_hr(email_to_respond_to['message-id'], all_email)
 
@@ -329,7 +323,7 @@ def write_message(email_to_respond_to):
     tR = tR + " hours.\n\n"
 
     tR = tR + "This email was written by a Python script, so if you see any"\
-                + " bugs or have any feedback, please let Lily know! :)"
+                + " bugs or have any feedback, please let [user] know! :)"
 
     return tR
 
@@ -346,7 +340,7 @@ class MyCallback(Callback):
 
     def trigger(self):
 
-        sender = self.message['from'].lower()
+        sender = self.message['from'].lower() 
         me = self.message['to'].lower()
 
         if sender in replyto_dict:
@@ -393,24 +387,6 @@ class MyCallback(Callback):
         http://stackoverflow.com/questions/771907/python-how-to-store-a-draft-email-with-bcc-recipients-to-exchange-server-via-im
         http://stackoverflow.com/questions/17874360/python-how-to-parse-the-body-from-a-raw-email-given-that-raw-email-does-not
         '''
-
-        for payload in self.message.get_payload():
-            # if payload.is_multipart(): ...
-            if ' please ' in str(payload) or 'Please ' in str(payload) or ' can ' \
-                    in str(payload) or 'Can ' in str(payload):
-
-                message = MIMEMultipart()
-                message['Subject'] = self.message['subject'] 
-                message['From'] = me
-                message['to'] = sender 
-                message.attach(MIMEText('On it! :)\n')) 
-
-                conn.append("[Gmail]/Drafts" 
-                              ,'' 
-                              ,imaplib.Time2Internaldate(time.time()) 
-                              ,str(message)) 
-
-            print payload.get_payload()        
 
 # register the callback
 register(MyCallback)
